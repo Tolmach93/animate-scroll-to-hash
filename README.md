@@ -22,7 +22,7 @@ You can pass the configuration object to the constructor.
 If you want set listeners on links only to children of block:
 ```js
 new AnimateScrollToHash({
-  block: document, // node where search links. default: document
+  block: document, // search for links. default: document
 });
 ```
 If you have fixed header element, you may set margin:
@@ -35,8 +35,8 @@ If height of header may vary depending on screen width:
 ```js
 new AnimateScrollToHash({
   margin: {
-    0: 60, // if client width more or equal 0.
-    960: 80, // if client width more or equal 960.
+    0: 60, // if client width more than or equal to 0.
+    960: 80, // if client width more than or equal to 960.
   },
 });
 ```
