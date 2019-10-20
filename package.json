@@ -1,0 +1,26 @@
+{
+  "name": "animate-scroll-to-hash",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dist/animate-scroll-to-hash.min.js",
+  "scripts": {
+    "build": "webpack --mode production",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tolmach93/animate-scroll-to-hash.git"
+  },
+  "author": "Tolmachev Dmitriy",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Tolmach93/animate-scroll-to-hash/issues"
+  },
+  "homepage": "https://github.com/Tolmach93/animate-scroll-to-hash#readme",
+  "devDependencies": {
+    "@babel/core": "^7.6.4",
+    "babel-loader": "^8.0.6",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.9"
+  }
+}
