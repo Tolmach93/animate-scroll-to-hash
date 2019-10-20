@@ -1,6 +1,6 @@
 {
   "name": "animate-scroll-to-hash",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "dist/animate-scroll-to-hash.min.js",
   "scripts": {
