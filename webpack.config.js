@@ -6,7 +6,7 @@ module.exports = {
   output: {
     path: path.resolve('dist'),
     filename: 'animate-scroll-to-hash.min.js',
-    library: 'animateScrollToHash',
+    library: 'AnimateScrollToHash',
     libraryTarget: 'umd',
   },
   module: {

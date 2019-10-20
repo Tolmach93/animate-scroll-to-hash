@@ -1,77 +1,123 @@
-function calculate_window_offset_y(o) {
-  let x = 0;
-  let y = 0;
-  while (o) {
-    y += o.offsetTop;
-    o = o.offsetParent;
-  }
-  return y
-}
-
-function move(block, to) {
-
-  let timerMove = null;
-
-  to = to || to === 0 ? to : (block.scrollHeight ? block.scrollHeight : Math.max(
-    document.body.scrollHeight, document.documentElement.scrollHeight,
-    document.body.offsetHeight, document.documentElement.offsetHeight,
-    document.body.clientHeight, document.documentElement.clientHeight
-  )) - (block.offsetHeight ? block.offsetHeight : window.innerHeight);
-  clearInterval(timerMove);
-  let distance = to - (block.scrollTop ? block.scrollTop : window.pageYOffset);
-  if (distance === 0) return;
-  let iter = 0;
-  let steps = Math.round(500 / 13);
-  let pos = [(block.scrollTop ? block.scrollTop : window.pageYOffset)];
-  let stepPix = (distance * 2) / steps;
-  let coof = stepPix / (steps / 2);
-  for (let i = 0; i < steps; i++) {
-    if (i < (steps / 2)) {
-      pos.push(Math.round(pos[pos.length - 1] + coof * i));
-    } else {
-      pos.push(Math.round(pos[pos.length - 1] + coof * ((steps / 2) - i + (steps / 2))));
+class AnimateScrollToHash {
+  constructor ({
+    block = document,
+    margin = 0,// px
+    transition = 500,// ms
+  } = {}) {
+    this.margin = margin;
+    this.transition = transition;
+    this.listeners = [];
+    this.intervalId = 0;
+    this.setListener = this.setListener.bind(this);
+    this.resetListeners = this.resetListeners.bind(this);
+    this.moveToId = this.moveToId.bind(this);
+    this.moveToY = this.moveToY.bind(this);
+    const links = block.getElementsByTagName('a');
+    for (let i = 0; i < links.length; i++) {
+      this.setListener(links[i]);
     }
   }
+  set margin (margin) {
+    this._margin = margin;
+  }
 
+  get margin () {
+    if (typeof this._margin === 'number') return this._margin;
+    if (typeof this._margin !== 'object') return 0;
+    const size = Object.keys(this._margin)
+      .map(size => +size)
+      .sort()
+      .reverse()
+      .find(size => size <= document.documentElement.clientWidth);
 
-  let setScrollPos = block.scrollTop !== undefined
-    ? to => block.scrollTop = to
-    : to => window.scrollTo(0, to);
+    return size || size === 0 ? this._margin[size] : 0;
+  }
 
-  timerMove = setInterval(() => {
-    if (iter >= steps) {
-      clearInterval(timerMove);
-      setScrollPos(to)
-    } else {
-      setScrollPos(pos[++iter])
+  setListener (link) {
+    let href = link.getAttribute('href');
+    if (!href || link.target === '_blank') return;
+    if (!(new RegExp(location.pathname + '\#.').test(href) || href.indexOf('#') === 0)) return;
+    const id = href.split('#')[1];
+    if (location.search) {
+      href = location.pathname + location.search + '#' + id;
+      link.setAttribute('href', href);
     }
-  }, 13);
-}
+    const listener = (e) => {
+      e.preventDefault();
+      this.moveToId(id);
+      return false;
+    };
+    link.addEventListener('click', listener, false);
+    this.listeners.push({
+      link,
+      listener
+    })
+  }
 
-function setScrollListeners() {
-  const links = document.getElementsByTagName('a');
-  for (let i = 0; i < links.length; i++) {
-    const link = links[i];
-    let href = link.getAttribute('href') || '';
-    if (link.target !== '_blank' && (new RegExp(location.pathname + '\#.').test(href) || href.indexOf('#') === 0)) {
-      const id = href.split('#')[1];
-      if (location.search) {
-        href = location.pathname + location.search + '#' + id;
-        link.setAttribute('href', href);
-      }
-      link.addEventListener('click', e => {
-        e.preventDefault();
-        const node = document.getElementById(id);
-        if (node) {
-          move(window, calculate_window_offset_y(node));
-          setTimeout(() => {
-            location.replace(href);
-          }, 310);
+  resetListeners () {
+    this.listeners.forEach(item => {
+      item.link.removeEventListener('click', item.listener, false);
+    })
+  }
+
+  moveToId (id) {
+    const node = document.getElementById(id);
+    let promise = Promise.resolve();
+    if (node) {
+      const y = AnimateScrollToHash.calculateWindowOffsetY(node);
+      promise = this.moveToY(y - this.margin)
+    }
+    promise
+      .then(() => {
+        const lastY = window.pageYOffset;
+        location.hash = '#' + id;
+        AnimateScrollToHash.setScrollPos(lastY);
+      });
+  }
+
+  moveToY (to) {
+    clearInterval(this.intervalId);
+    return new Promise((resolve, reject) => {
+      let distance = to - window.pageYOffset;
+      if (distance === 0) return resolve();
+      let iter = 0;
+      let steps = Math.round(this.transition / 13);
+      let pos = [window.pageYOffset];
+      let stepPix = (distance * 2) / steps;
+      let coof = stepPix / (steps / 2);
+      for (let i = 0; i < steps; i++) {
+        if (i < (steps / 2)) {
+          pos.push(Math.round(pos[pos.length - 1] + coof * i));
+        } else {
+          pos.push(Math.round(pos[pos.length - 1] + coof * ((steps / 2) - i + (steps / 2))));
         }
-      })
+      }
+
+      this.intervalId = setInterval(() => {
+        if (iter === steps) {
+          clearInterval(this.intervalId);
+          AnimateScrollToHash.setScrollPos(to);
+          resolve();
+        } else {
+          AnimateScrollToHash.setScrollPos(pos[++iter])
+        }
+      }, 13);
+    })
+  }
+
+  static calculateWindowOffsetY (node) {
+    let y = 0;
+    while (node) {
+      y += node.offsetTop;
+      node = node.offsetParent;
     }
+    return y
+  }
+
+  static setScrollPos (to) {
+    window.scrollTo(0, to)
   }
 }
 
-module.exports = setScrollListeners;
-module.exports.default = setScrollListeners;
+module.exports = AnimateScrollToHash;
+module.exports.default = AnimateScrollToHash;
